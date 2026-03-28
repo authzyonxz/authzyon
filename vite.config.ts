@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { defineConfig, type Plugin, type ViteDevServer } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
+import { VitePWA } from "vite-plugin-pwa";
 
 // =============================================================================
 // Manus Debug Collector - Vite Plugin
@@ -150,7 +151,54 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+const pwaPlugin = VitePWA({
+  registerType: "autoUpdate",
+  includeAssets: ["favicon-16x16.png", "favicon-32x32.png", "apple-touch-icon.png"],
+  manifest: {
+    name: "AuthZyon",
+    short_name: "AuthZyon",
+    description: "Painel Administrativo de Autenticação AuthZyon",
+    theme_color: "#0f0f19",
+    background_color: "#0f0f19",
+    display: "standalone",
+    orientation: "portrait",
+    scope: "/",
+    start_url: "/login",
+    lang: "pt-BR",
+    icons: [
+      { src: "/pwa-72x72.png",   sizes: "72x72",   type: "image/png" },
+      { src: "/pwa-96x96.png",   sizes: "96x96",   type: "image/png" },
+      { src: "/pwa-128x128.png", sizes: "128x128", type: "image/png" },
+      { src: "/pwa-144x144.png", sizes: "144x144", type: "image/png" },
+      { src: "/pwa-152x152.png", sizes: "152x152", type: "image/png" },
+      { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" },
+      { src: "/pwa-384x384.png", sizes: "384x384", type: "image/png" },
+      { src: "/pwa-512x512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
+    ],
+  },
+  workbox: {
+    // Estratégia: network-first para rotas de API, cache-first para assets estáticos
+    runtimeCaching: [
+      {
+        urlPattern: /^\/api\//,
+        handler: "NetworkFirst",
+        options: {
+          cacheName: "api-cache",
+          networkTimeoutSeconds: 10,
+          expiration: { maxEntries: 50, maxAgeSeconds: 300 },
+        },
+      },
+    ],
+    // Garante que navegação SPA funcione offline
+    navigateFallback: "/index.html",
+    navigateFallbackDenylist: [/^\/api\//],
+  },
+  devOptions: {
+    enabled: false, // Desativado em dev para não interferir no HMR
+  },
+});
+
+const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector(), pwaPlugin];
 
 export default defineConfig({
   plugins,
