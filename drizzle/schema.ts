@@ -29,7 +29,7 @@ export type InsertAuthUser = typeof authUsers.$inferInsert;
 // ─── Tabela de keys de acesso ─────────────────────────────────────────────────
 export const accessKeys = mysqlTable("access_keys", {
   id: int("id").autoincrement().primaryKey(),
-  key: varchar("key", { length: 20 }).notNull().unique(),
+  key: varchar("key", { length: 64 }).notNull().unique(),
   createdBy: int("created_by").notNull(), // FK -> auth_users.id
   durationDays: int("duration_days").notNull(), // 1, 7 ou 30
   extraDays: int("extra_days").default(0).notNull(), // dias extras adicionados pelo admin
@@ -49,7 +49,7 @@ export type InsertAccessKey = typeof accessKeys.$inferInsert;
 // ─── Histórico de validações/logins via key ───────────────────────────────────
 export const keyValidations = mysqlTable("key_validations", {
   id: int("id").autoincrement().primaryKey(),
-  key: varchar("key", { length: 20 }).notNull(),
+  key: varchar("key", { length: 64 }).notNull(),
   keyId: int("key_id"), // FK -> access_keys.id (pode ser null se key inválida)
   result: mysqlEnum("result", ["success", "invalid", "expired", "banned", "paused"]).notNull(),
   ipAddress: varchar("ip_address", { length: 64 }),
