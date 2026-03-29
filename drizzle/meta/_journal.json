@@ -15,6 +15,13 @@
       "when": 1774475407402,
       "tag": "0001_known_tony_stark",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1774801238775,
+      "tag": "0002_daily_peter_quill",
+      "breakpoints": true
     }
   ]
 }
