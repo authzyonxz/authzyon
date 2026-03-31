@@ -23,13 +23,13 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/keys/create", label: "Criar Keys", icon: KeyRound },
   { href: "/keys", label: "Gerenciar Keys", icon: List },
+  { href: "/packages", label: "Packages", icon: Package },
   { href: "/history", label: "Histórico", icon: History },
   { href: "/profile", label: "Meu Perfil", icon: UserCircle },
 ];
 
 const adminItems = [
   { href: "/users", label: "Usuários", icon: Users },
-  { href: "/packages", label: "Packages", icon: Package },
 ];
 
 interface PanelLayoutProps {

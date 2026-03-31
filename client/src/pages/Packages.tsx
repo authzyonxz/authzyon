@@ -16,6 +16,7 @@ import {
   Calendar, KeyRound, Globe, GlobeLock
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePanelAuth } from "@/hooks/usePanelAuth";
 
 function CreatePackageDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [name, setName] = useState("");
@@ -72,6 +73,7 @@ function CreatePackageDialog({ open, onClose }: { open: boolean; onClose: () => 
 function PackagesContent() {
   const [createOpen, setCreateOpen] = useState(false);
   const { data: pkgs, isLoading } = trpc.packages.list.useQuery();
+  const { isAdmin, user } = usePanelAuth();
   const utils = trpc.useUtils();
 
   const deleteMutation = trpc.packages.delete.useMutation({
@@ -146,18 +148,20 @@ function PackagesContent() {
                     {pkg.name}
                   </CardTitle>
                   <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        if(confirm("Tem certeza que deseja excluir este pacote? As keys vinculadas a ele podem parar de funcionar.")) {
-                          deleteMutation.mutate({ id: pkg.id });
-                        }
-                      }}
-                      className="h-7 w-7 text-muted-foreground hover:text-red-400 hover:bg-red-400/10"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
+                    {(isAdmin || pkg.createdBy === user?.id) && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          if(confirm("Tem certeza que deseja excluir este pacote? As keys vinculadas a ele podem parar de funcionar.")) {
+                            deleteMutation.mutate({ id: pkg.id });
+                          }
+                        }}
+                        className="h-7 w-7 text-muted-foreground hover:text-red-400 hover:bg-red-400/10"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardHeader>
@@ -181,7 +185,7 @@ function PackagesContent() {
                     onCheckedChange={(checked) => {
                       statusMutation.mutate({ id: pkg.id, status: checked ? "online" : "offline" });
                     }}
-                    disabled={statusMutation.isPending}
+                    disabled={statusMutation.isPending || (!isAdmin && pkg.createdBy !== user?.id)}
                   />
                 </div>
 
@@ -224,7 +228,7 @@ function PackagesContent() {
 
 export default function Packages() {
   return (
-    <RequireAuth adminOnly>
+    <RequireAuth>
       <PanelLayout title="Packages">
         <PackagesContent />
       </PanelLayout>

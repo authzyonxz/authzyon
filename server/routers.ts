@@ -314,11 +314,10 @@ export const appRouter = router({
         return { success: true, token };
       }),
 
-    list: panelProcedure.query(async ({ ctx }) => {
-      const user = (ctx as any).panelUser;
-      return user.role === "admin"
-        ? await getAllPackages()
-        : await getAllPackages(user.id);
+    list: panelProcedure.query(async () => {
+      // Todos os usuários (admins e users comuns) podem ver todos os pacotes
+      // Isso permite que usuários criem keys vinculadas a pacotes criados por admins
+      return await getAllPackages();
     }),
 
     delete: panelProcedure
