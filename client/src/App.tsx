@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import CreateKeys from "./pages/CreateKeys";
 import ManageKeys from "./pages/ManageKeys";
 import Users from "./pages/Users";
+import Packages from "./pages/Packages";
 import History from "./pages/History";
 import Profile from "./pages/Profile";
 import AppLogin from "./pages/AppLogin";
@@ -32,6 +33,7 @@ function Router() {
       <Route path="/keys/create" component={CreateKeys} />
       <Route path="/keys" component={ManageKeys} />
       <Route path="/users" component={Users} />
+      <Route path="/packages" component={Packages} />
       <Route path="/history" component={History} />
       <Route path="/profile" component={Profile} />
 

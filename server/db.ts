@@ -1,6 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { accessKeys, authUsers, InsertUser, keyValidations, panelSessions, users } from "../drizzle/schema";
+import { accessKeys, authUsers, InsertUser, keyValidations, panelSessions, users, packages } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -69,11 +69,62 @@ export async function updateAuthUser(id: number, data: Partial<{
   await db.update(authUsers).set(data).where(eq(authUsers.id, id));
 }
 
+// ─── Packages ─────────────────────────────────────────────────────────────────
+
+export async function createPackage(data: {
+  name: string;
+  token: string;
+  createdBy: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.insert(packages).values(data);
+}
+
+export async function getAllPackages(createdBy?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  if (createdBy !== undefined) {
+    return db.select().from(packages).where(eq(packages.createdBy, createdBy)).orderBy(desc(packages.createdAt));
+  }
+  return db.select().from(packages).orderBy(desc(packages.createdAt));
+}
+
+export async function getPackageById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(packages).where(eq(packages.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getPackageByToken(token: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(packages).where(eq(packages.token, token)).limit(1);
+  return result[0];
+}
+
+export async function deletePackage(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(packages).where(eq(packages.id, id));
+}
+
+export async function updatePackage(id: number, data: Partial<{
+  name: string;
+  status: "online" | "offline";
+}>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(packages).set(data).where(eq(packages.id, id));
+}
+
 // ─── Access Keys ──────────────────────────────────────────────────────────────
 
 export async function createAccessKey(data: {
   key: string;
   createdBy: number;
+  packageId?: number;
   durationDays: number;
 }) {
   const db = await getDb();

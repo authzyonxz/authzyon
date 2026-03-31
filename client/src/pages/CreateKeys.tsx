@@ -6,9 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import {
-  KeyRound, Copy, CheckCheck, Sparkles, Clock, Loader2, Plus, Minus
+  KeyRound, Copy, CheckCheck, Sparkles, Clock, Loader2, Plus, Minus, Package as PackageIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,11 +28,14 @@ const DURATIONS = [
 function CreateKeysContent() {
   const [count, setCount] = useState(1);
   const [duration, setDuration] = useState(1);
+  const [packageId, setPackageId] = useState<string>("none");
   const [generatedKeys, setGeneratedKeys] = useState<string[]>([]);
   const [copiedAll, setCopiedAll] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
   const utils = trpc.useUtils();
+  const { data: packages } = trpc.packages.list.useQuery();
+
   const generateMutation = trpc.keys.generate.useMutation({
     onSuccess: (data) => {
       setGeneratedKeys(data.keys);
@@ -39,7 +49,11 @@ function CreateKeysContent() {
   });
 
   const handleGenerate = () => {
-    generateMutation.mutate({ count, durationDays: duration });
+    generateMutation.mutate({ 
+      count, 
+      durationDays: duration,
+      packageId: packageId === "none" ? undefined : parseInt(packageId)
+    });
   };
 
   const copyKey = (key: string, index: number) => {
@@ -70,6 +84,30 @@ function CreateKeysContent() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-5">
+          {/* Package Selection */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-foreground flex items-center gap-1.5">
+              <PackageIcon className="w-3.5 h-3.5 text-muted-foreground" />
+              Vincular a um Pacote (Opcional)
+            </Label>
+            <Select value={packageId} onValueChange={setPackageId}>
+              <SelectTrigger className="bg-input border-border text-foreground">
+                <SelectValue placeholder="Selecione um pacote" />
+              </SelectTrigger>
+              <SelectContent className="bg-card border-border text-foreground">
+                <SelectItem value="none">Nenhum (Livre)</SelectItem>
+                {packages?.map(pkg => (
+                  <SelectItem key={pkg.id} value={pkg.id.toString()}>
+                    {pkg.name} {pkg.status === "offline" ? "(Offline)" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-[11px] text-muted-foreground">
+              Se selecionar um pacote, a key só funcionará em projetos configurados com o token desse pacote.
+            </p>
+          </div>
+
           {/* Duração */}
           <div className="space-y-2">
             <Label className="text-sm font-medium text-foreground flex items-center gap-1.5">

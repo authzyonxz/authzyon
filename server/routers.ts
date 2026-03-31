@@ -16,6 +16,11 @@ import {
   updateKey,
   banAllUserKeys,
   unbanAllUserKeys,
+  createPackage,
+  getAllPackages,
+  getPackageById,
+  deletePackage,
+  updatePackage,
   getKeyStats,
   logKeyValidation,
   getKeyValidationHistory,
@@ -187,6 +192,7 @@ export const appRouter = router({
       .input(z.object({
         count: z.number().min(1).max(100),
         durationDays: z.number().refine(v => [1, 7, 30].includes(v), "Duração inválida"),
+        packageId: z.number().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         const user = (ctx as any).panelUser;
@@ -211,6 +217,7 @@ export const appRouter = router({
           await createAccessKey({
             key,
             createdBy: user.id,
+            packageId: input.packageId,
             durationDays: input.durationDays,
           });
         }
@@ -288,6 +295,55 @@ export const appRouter = router({
           if (key.status === "expired") updates.status = "active";
         }
         await updateKey(input.id, updates as any);
+        return { success: true };
+      }),
+  }),
+
+  // ─── Packages ──────────────────────────────────────────────────────────────
+  packages: router({
+    create: panelProcedure
+      .input(z.object({ name: z.string().min(1).max(128) }))
+      .mutation(async ({ input, ctx }) => {
+        const user = (ctx as any).panelUser;
+        const token = "pkg_" + nanoid(32);
+        await createPackage({
+          name: input.name,
+          token,
+          createdBy: user.id,
+        });
+        return { success: true, token };
+      }),
+
+    list: panelProcedure.query(async ({ ctx }) => {
+      const user = (ctx as any).panelUser;
+      return user.role === "admin"
+        ? await getAllPackages()
+        : await getAllPackages(user.id);
+    }),
+
+    delete: panelProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const user = (ctx as any).panelUser;
+        const pkg = await getPackageById(input.id);
+        if (!pkg) throw new TRPCError({ code: "NOT_FOUND" });
+        if (user.role !== "admin" && pkg.createdBy !== user.id) {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        await deletePackage(input.id);
+        return { success: true };
+      }),
+
+    updateStatus: panelProcedure
+      .input(z.object({ id: z.number(), status: z.enum(["online", "offline"]) }))
+      .mutation(async ({ input, ctx }) => {
+        const user = (ctx as any).panelUser;
+        const pkg = await getPackageById(input.id);
+        if (!pkg) throw new TRPCError({ code: "NOT_FOUND" });
+        if (user.role !== "admin" && pkg.createdBy !== user.id) {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        await updatePackage(input.id, { status: input.status });
         return { success: true };
       }),
   }),

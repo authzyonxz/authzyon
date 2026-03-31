@@ -11,7 +11,7 @@ import {
 import { toast } from "sonner";
 import {
   List, Search, PauseCircle, Play, Ban, CalendarPlus,
-  Loader2, KeyRound, Clock, CheckCircle2, AlertCircle, XCircle
+  Loader2, KeyRound, Clock, CheckCircle2, AlertCircle, XCircle, Package as PackageIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -85,6 +85,7 @@ function ManageKeysContent() {
   const [addDaysTarget, setAddDaysTarget] = useState<{ id: number; key: string } | null>(null);
 
   const { data: keys, isLoading } = trpc.keys.list.useQuery();
+  const { data: packages } = trpc.packages.list.useQuery();
   const utils = trpc.useUtils();
 
   const pauseMutation = trpc.keys.pause.useMutation({
@@ -177,6 +178,8 @@ function ManageKeysContent() {
                 const canPause = k.status === "active" || k.status === "paused";
                 const canBan = k.status !== "banned";
 
+                const pkg = packages?.find(p => p.id === k.packageId);
+
                 return (
                   <div key={k.id} className="px-4 py-3">
                     {/* Row 1: key + status */}
@@ -195,6 +198,12 @@ function ManageKeysContent() {
 
                     {/* Row 2: info */}
                     <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground mb-2">
+                      {pkg && (
+                        <span className="flex items-center gap-1 text-primary/80 font-medium">
+                          <PackageIcon className="w-3 h-3" />
+                          {pkg.name}
+                        </span>
+                      )}
                       <span>{k.durationDays + (k.extraDays ?? 0)} dias</span>
                       {k.activatedAt && (
                         <span>Ativada: {new Date(k.activatedAt).toLocaleDateString("pt-BR")}</span>

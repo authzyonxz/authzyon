@@ -24,6 +24,20 @@ export const authUsers = mysqlTable("auth_users", {
 });
 
 export type AuthUser = typeof authUsers.$inferSelect;
+
+// ─── Tabela de pacotes (Packages) ─────────────────────────────────────────────
+export const packages = mysqlTable("packages", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 128 }).notNull(),
+  token: varchar("token", { length: 64 }).notNull().unique(), // token aleatório do pacote
+  status: mysqlEnum("status", ["online", "offline"]).default("online").notNull(),
+  createdBy: int("created_by").notNull(), // FK -> auth_users.id
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Package = typeof packages.$inferSelect;
+export type InsertPackage = typeof packages.$inferInsert;
 export type InsertAuthUser = typeof authUsers.$inferInsert;
 
 // ─── Tabela de keys de acesso ─────────────────────────────────────────────────
@@ -31,6 +45,7 @@ export const accessKeys = mysqlTable("access_keys", {
   id: int("id").autoincrement().primaryKey(),
   key: varchar("key", { length: 64 }).notNull().unique(),
   createdBy: int("created_by").notNull(), // FK -> auth_users.id
+  packageId: int("package_id"), // FK -> packages.id (opcional para manter compatibilidade)
   durationDays: int("duration_days").notNull(), // 1, 7 ou 30
   extraDays: int("extra_days").default(0).notNull(), // dias extras adicionados pelo admin
   status: mysqlEnum("status", ["pending", "active", "paused", "banned", "expired"])

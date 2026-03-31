@@ -5,6 +5,7 @@ import {
   KeyRound,
   List,
   Users,
+  Package,
   History,
   UserCircle,
   LogOut,
@@ -28,6 +29,7 @@ const navItems = [
 
 const adminItems = [
   { href: "/users", label: "Usuários", icon: Users },
+  { href: "/packages", label: "Packages", icon: Package },
 ];
 
 interface PanelLayoutProps {

@@ -13,6 +13,7 @@ import {
   getKeyByValue,
   updateKey,
   logKeyValidation,
+  getPackageByToken,
 } from "../db";
 import { calculateExpiry, isKeyExpired } from "../keyGenerator";
 
@@ -59,7 +60,7 @@ async function startServer() {
    * Valida uma key e ativa se for a primeira vez.
    */
   app.post("/api/public/validate-key", async (req, res) => {
-    const { key } = req.body ?? {};
+    const { key, packageToken } = req.body ?? {};
     const ip = req.ip ?? req.headers["x-forwarded-for"]?.toString();
     const ua = req.headers["user-agent"];
 
@@ -73,6 +74,20 @@ async function startServer() {
     if (!record) {
       await logKeyValidation({ key: keyUpper, result: "invalid", ipAddress: ip, userAgent: ua });
       return res.status(404).json({ success: false, result: "invalid", message: "Key inválida, insira uma key válida" });
+    }
+
+    // Validação de Package se a key estiver vinculada a um
+    if (record.packageId) {
+      if (!packageToken) {
+        return res.status(400).json({ success: false, result: "invalid", message: "Token do pacote não informado" });
+      }
+      const pkg = await getPackageByToken(packageToken);
+      if (!pkg || pkg.id !== record.packageId) {
+        return res.status(403).json({ success: false, result: "invalid", message: "Key não pertence a este pacote" });
+      }
+      if (pkg.status === "offline") {
+        return res.status(403).json({ success: false, result: "offline", message: "Este pacote está temporariamente offline" });
+      }
     }
 
     if (record.status === "banned") {
