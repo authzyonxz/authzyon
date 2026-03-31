@@ -77,6 +77,7 @@ async function startServer() {
     }
 
     // Validação de Package se a key estiver vinculada a um
+    let packageName: string | null = null;
     if (record.packageId) {
       if (!packageToken) {
         return res.status(400).json({ success: false, result: "invalid", message: "Token do pacote não informado" });
@@ -88,6 +89,7 @@ async function startServer() {
       if (pkg.status === "offline") {
         return res.status(403).json({ success: false, result: "offline", message: "Este pacote está temporariamente offline" });
       }
+      packageName = pkg.name;
     }
 
     if (record.status === "banned") {
@@ -138,6 +140,7 @@ async function startServer() {
       activatedAt: activatedAt?.toISOString(),
       expiresAt: expiresAt?.toISOString(),
       durationDays: record.durationDays + (record.extraDays ?? 0),
+      packageName,
       message: `Key Validada, KEY: ${keyUpper}`,
     });
   });
@@ -185,6 +188,17 @@ async function startServer() {
 
     await updateKey(record.id, { lastCheckedAt: new Date() });
 
+    let packageName: string | null = null;
+    if (record.packageId) {
+      const pkg = await getPackageById(record.packageId);
+      if (pkg) {
+        packageName = pkg.name;
+        if (pkg.status === "offline") {
+          return res.status(403).json({ success: false, result: "offline", message: "Este pacote está temporariamente offline" });
+        }
+      }
+    }
+
     return res.json({
       success: true,
       result: "valid",
@@ -193,6 +207,7 @@ async function startServer() {
       activatedAt: record.activatedAt?.toISOString(),
       expiresAt: record.expiresAt?.toISOString(),
       durationDays: record.durationDays + (record.extraDays ?? 0),
+      packageName,
       remainingMs: record.expiresAt ? Math.max(0, record.expiresAt.getTime() - Date.now()) : null,
     });
   });
