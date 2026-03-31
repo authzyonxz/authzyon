@@ -175,6 +175,22 @@ function UsersContent() {
     onError: (err) => toast.error(err.message),
   });
 
+  const banAllKeysMutation = trpc.users.banAllKeys.useMutation({
+    onSuccess: () => {
+      toast.success("Todas as keys do usuário foram banidas");
+      utils.users.list.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const unbanAllKeysMutation = trpc.users.unbanAllKeys.useMutation({
+    onSuccess: () => {
+      toast.success("Todas as keys do usuário foram desbanidas");
+      utils.users.list.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
   return (
     <div className="space-y-5 animate-fade-in-up">
       <div className="flex items-center justify-between">
@@ -278,6 +294,24 @@ function UsersContent() {
                       ) : (
                         <><XCircle className="w-3 h-3" /> Banir</>
                       )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => banAllKeysMutation.mutate({ userId: u.id })}
+                      disabled={banAllKeysMutation.isPending}
+                      className="h-7 text-xs gap-1 border-border text-orange-400 hover:text-orange-300 hover:border-orange-500/50"
+                    >
+                      <Ban className="w-3 h-3" /> Banir Keys
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => unbanAllKeysMutation.mutate({ userId: u.id })}
+                      disabled={unbanAllKeysMutation.isPending}
+                      className="h-7 text-xs gap-1 border-border text-blue-400 hover:text-blue-300 hover:border-blue-500/50"
+                    >
+                      <CheckCircle2 className="w-3 h-3" /> Desbanir Keys
                     </Button>
                   </div>
                 </div>

@@ -109,6 +109,21 @@ export async function updateKey(id: number, data: Partial<{
   await db.update(accessKeys).set(data).where(eq(accessKeys.id, id));
 }
 
+export async function banAllUserKeys(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(accessKeys).set({ status: "banned" }).where(eq(accessKeys.createdBy, userId));
+}
+
+export async function unbanAllUserKeys(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  // Restaura para "active" se já ativada, ou "pending" se nunca usada
+  await db.update(accessKeys)
+    .set({ status: sql`CASE WHEN activated_at IS NOT NULL THEN 'active' ELSE 'pending' END` })
+    .where(and(eq(accessKeys.createdBy, userId), eq(accessKeys.status, "banned")));
+}
+
 export async function getKeyStats() {
   const db = await getDb();
   if (!db) return { total: 0, pending: 0, active: 0, paused: 0, banned: 0, expired: 0 };

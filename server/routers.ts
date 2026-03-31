@@ -14,6 +14,8 @@ import {
   getKeyByValue,
   getAllKeys,
   updateKey,
+  banAllUserKeys,
+  unbanAllUserKeys,
   getKeyStats,
   logKeyValidation,
   getKeyValidationHistory,
@@ -348,6 +350,20 @@ export const appRouter = router({
       .input(z.object({ id: z.number(), newPassword: z.string().min(4) }))
       .mutation(async ({ input }) => {
         await updateAuthUser(input.id, { passwordHash: hashPassword(input.newPassword) });
+        return { success: true };
+      }),
+    
+    banAllKeys: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input }) => {
+        await banAllUserKeys(input.userId);
+        return { success: true };
+      }),
+
+    unbanAllKeys: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input }) => {
+        await unbanAllUserKeys(input.userId);
         return { success: true };
       }),
   }),
