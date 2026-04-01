@@ -103,7 +103,7 @@ function GeneratedKeysModal({ keys, durationLabel, packageName, onClose }: Gener
               "w-full h-[54px] rounded-[20px] font-bold text-[15px] flex items-center justify-center gap-2.5 transition-all duration-300 active:scale-[0.97] shadow-lg",
               copiedAll
                 ? "bg-green-500/20 text-green-400 border border-green-500/30"
-                : "bg-[#a855f7] hover:bg-[#9333ea] text-white shadow-[#a855f7]/20"
+                : "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30"
             )}
           >
             {copiedAll ? (
