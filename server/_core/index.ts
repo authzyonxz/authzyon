@@ -70,6 +70,17 @@ async function startServer() {
     }
 
     const keyUpper = key.toUpperCase().trim();
+
+    // 1. Verificação prioritária de Package Offline se o token for fornecido
+    let packageName: string | null = null;
+    if (packageToken) {
+      const pkg = await getPackageByToken(packageToken);
+      if (pkg && pkg.status === "offline") {
+        return res.status(403).json({ success: false, result: "offline", message: "Este pacote está temporariamente offline" });
+      }
+      if (pkg) packageName = pkg.name;
+    }
+
     const record = await getKeyByValue(keyUpper);
 
     if (!record) {
@@ -77,8 +88,7 @@ async function startServer() {
       return res.status(404).json({ success: false, result: "invalid", message: "Key inválida, insira uma key válida" });
     }
 
-    // Validação de Package se a key estiver vinculada a um
-    let packageName: string | null = null;
+    // Validação de vínculo de Package
     if (record.packageId) {
       if (!packageToken) {
         return res.status(400).json({ success: false, result: "invalid", message: "Token do pacote não informado" });
@@ -87,6 +97,7 @@ async function startServer() {
       if (!pkg || pkg.id !== record.packageId) {
         return res.status(403).json({ success: false, result: "invalid", message: "Key não pertence a este pacote" });
       }
+      // Re-checa status se já não foi checado acima
       if (pkg.status === "offline") {
         return res.status(403).json({ success: false, result: "offline", message: "Este pacote está temporariamente offline" });
       }
@@ -187,8 +198,7 @@ async function startServer() {
       return res.status(403).json({ success: false, result: "expired", message: "Key expirada" });
     }
 
-    await updateKey(record.id, { lastCheckedAt: new Date() });
-
+    // 1. Verificação prioritária de Package Offline antes de qualquer outra lógica
     let packageName: string | null = null;
     if (record.packageId) {
       const pkg = await getPackageById(record.packageId);
@@ -199,6 +209,8 @@ async function startServer() {
         }
       }
     }
+
+    await updateKey(record.id, { lastCheckedAt: new Date() });
 
     return res.json({
       success: true,
