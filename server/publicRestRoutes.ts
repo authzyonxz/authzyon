@@ -16,6 +16,17 @@ export const keyValidationRateLimiter = rateLimit({
     // Não aplica rate limit se for localhost (desenvolvimento)
     return req.ip === "127.0.0.1" || req.ip === "::1";
   },
+  keyGenerator: (req) => {
+    // Usa o IP real mesmo em ambientes com proxy
+    return req.ip || req.socket.remoteAddress || "unknown";
+  },
+  handler: (req, res) => {
+    res.status(429).json({
+      success: false,
+      result: "rate_limited",
+      message: "Muitas requisições. Tente novamente em 1 minuto.",
+    });
+  },
 });
 
 /**

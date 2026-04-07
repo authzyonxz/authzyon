@@ -35,6 +35,9 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
+  // Configurar trust proxy para ambientes com proxy reverso (Railway, Heroku, etc)
+  app.set("trust proxy", 1);
+
   // Segurança: Helmet para headers HTTP
   app.use(helmet());
 
