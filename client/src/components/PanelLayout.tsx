@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  Settings,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ const navItems = [
   { href: "/packages", label: "Packages", icon: Package },
   { href: "/history", label: "Histórico", icon: History },
   { href: "/profile", label: "Meu Perfil", icon: UserCircle },
+  { href: "/settings", label: "Configurações", icon: Settings },
 ];
 
 const adminItems = [

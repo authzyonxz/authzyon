@@ -7,6 +7,7 @@ import {
   Users, Activity, TrendingUp, AlertCircle
 } from "lucide-react";
 import { usePanelAuth } from "@/hooks/usePanelAuth";
+import { DashboardCharts } from "@/components/DashboardCharts";
 
 function StatusBadge({ result }: { result: string }) {
   const map: Record<string, string> = {
@@ -127,6 +128,13 @@ function DashboardContent() {
           </CardContent>
         </Card>
       )}
+
+      {/* Gráficos Analíticos */}
+      <DashboardCharts 
+        isLoading={isLoading}
+        validationTrend={data?.validationTrend}
+        keyStatusDistribution={data?.keyStatusDistribution}
+      />
 
       {/* Recent validations */}
       <Card className="bg-card border-border">

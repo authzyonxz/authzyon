@@ -33,6 +33,7 @@ import { hashPassword, verifyPassword, generateSessionToken } from "./passwordUt
 import { generateKeys, calculateExpiry, isKeyExpired } from "./keyGenerator";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
+import { extendedRouters } from "./routers_extensions";
 
 // ─── Middleware de autenticação customizada ───────────────────────────────────
 
@@ -178,10 +179,32 @@ export const appRouter = router({
       const keyStats = await getKeyStats();
       const allUsers = user.role === "admin" ? await getAllAuthUsers() : [];
       const recentValidations = await getKeyValidationHistory(10);
+
+      // Dados para os gráficos (Mockados para exemplo, podem ser substituídos por queries reais)
+      const validationTrend = [
+        { date: "01/04", success: 12, invalid: 2, expired: 1, banned: 0, paused: 0 },
+        { date: "02/04", success: 18, invalid: 5, expired: 0, banned: 1, paused: 0 },
+        { date: "03/04", success: 15, invalid: 3, expired: 2, banned: 0, paused: 1 },
+        { date: "04/04", success: 22, invalid: 4, expired: 1, banned: 0, paused: 0 },
+        { date: "05/04", success: 30, invalid: 6, expired: 3, banned: 1, paused: 0 },
+        { date: "06/04", success: 25, invalid: 2, expired: 1, banned: 0, paused: 2 },
+        { date: "07/04", success: 28, invalid: 4, expired: 2, banned: 0, paused: 0 },
+      ];
+
+      const keyStatusDistribution = [
+        { status: "Ativas", count: keyStats.active },
+        { status: "Pendentes", count: keyStats.pending },
+        { status: "Expiradas", count: keyStats.expired },
+        { status: "Pausadas", count: keyStats.paused },
+        { status: "Banidas", count: keyStats.banned },
+      ];
+
       return {
         keyStats,
         totalUsers: allUsers.length,
         recentValidations,
+        validationTrend,
+        keyStatusDistribution,
       };
     }),
   }),
@@ -298,6 +321,9 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
+
+  // ─── Extensões (Paginação, Auditoria, Webhooks, 2FA) ──────────────
+  ...extendedRouters,
 
   // ─── Packages ──────────────────────────────────────────────────────────────
   packages: router({

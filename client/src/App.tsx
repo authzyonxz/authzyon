@@ -16,6 +16,8 @@ import Packages from "./pages/Packages";
 import History from "./pages/History";
 import Profile from "./pages/Profile";
 import AppLogin from "./pages/AppLogin";
+import Settings from "./pages/Settings";
+import Verify2FA from "./pages/Verify2FA";
 
 function Router() {
   return (
@@ -36,6 +38,8 @@ function Router() {
       <Route path="/packages" component={Packages} />
       <Route path="/history" component={History} />
       <Route path="/profile" component={Profile} />
+      <Route path="/settings" component={Settings} />
+      <Route path="/verify-2fa" component={Verify2FA} />
 
       {/* Tela iOS */}
       <Route path="/app" component={AppLogin} />
