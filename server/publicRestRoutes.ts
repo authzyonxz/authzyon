@@ -10,15 +10,10 @@ import { isKeyExpired, calculateExpiry } from "./keyGenerator";
 export const keyValidationRateLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minuto
   max: 30, // 30 requisições por janela
-  message: { success: false, result: "rate_limited", message: "Muitas requisições. Tente novamente em 1 minuto." },
   standardHeaders: true, // Retorna informações de rate limit nos headers
   skip: (req) => {
     // Não aplica rate limit se for localhost (desenvolvimento)
     return req.ip === "127.0.0.1" || req.ip === "::1";
-  },
-  keyGenerator: (req) => {
-    // Usa o IP real mesmo em ambientes com proxy
-    return req.ip || req.socket.remoteAddress || "unknown";
   },
   handler: (req, res) => {
     res.status(429).json({
