@@ -41,7 +41,7 @@ const PANEL_SESSION_COOKIE = "authzyon_session";
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
 // Procedure que verifica sessão do painel AuthZyon
-const panelProcedure = publicProcedure.use(async ({ ctx, next }) => {
+export const panelProcedure = publicProcedure.use(async ({ ctx, next }) => {
   const token = ctx.req.cookies?.[PANEL_SESSION_COOKIE];
   if (!token) throw new TRPCError({ code: "UNAUTHORIZED", message: "Não autenticado" });
 
@@ -60,7 +60,7 @@ const panelProcedure = publicProcedure.use(async ({ ctx, next }) => {
 });
 
 // Procedure apenas para admins
-const adminProcedure = panelProcedure.use(async ({ ctx, next }) => {
+export const adminProcedure = panelProcedure.use(async ({ ctx, next }) => {
   if ((ctx as any).panelUser.role !== "admin") {
     throw new TRPCError({ code: "FORBIDDEN", message: "Acesso restrito a administradores" });
   }

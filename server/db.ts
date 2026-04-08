@@ -17,6 +17,14 @@ export async function getDb() {
   return _db;
 }
 
+// Exportação direta do db para uso em outros módulos (lazy initialization)
+export const db = {
+  insert: async (...args: any[]) => (await getDb())!.insert(...args),
+  select: async (...args: any[]) => (await getDb())!.select(...args),
+  update: async (...args: any[]) => (await getDb())!.update(...args),
+  delete: async (...args: any[]) => (await getDb())!.delete(...args),
+} as any;
+
 // ─── Auth Users ───────────────────────────────────────────────────────────────
 
 export async function getAuthUserByUsername(username: string) {
