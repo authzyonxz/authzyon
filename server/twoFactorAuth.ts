@@ -1,7 +1,8 @@
 import { db } from "./db";
 import { user2FA, InsertUser2FA } from "../drizzle/schema_extensions";
 import { eq } from "drizzle-orm";
-import { authenticator } from "otplib";
+import pkg from "otplib";
+const { authenticator } = pkg;
 import QRCode from "qrcode";
 import crypto from "crypto";
 
