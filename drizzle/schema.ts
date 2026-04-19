@@ -43,7 +43,7 @@ export type InsertAuthUser = typeof authUsers.$inferInsert;
 // ─── Tabela de keys de acesso ─────────────────────────────────────────────────
 export const accessKeys = mysqlTable("access_keys", {
   id: int("id").autoincrement().primaryKey(),
-  key: varchar("key", { length: 64 }).notNull().unique(),
+  key: varchar("key", { length: 128 }).notNull().unique(),
   createdBy: int("created_by").notNull(), // FK -> auth_users.id
   packageId: int("package_id"), // FK -> packages.id (opcional para manter compatibilidade)
   durationDays: int("duration_days").notNull(), // 1, 7 ou 30
@@ -64,7 +64,7 @@ export type InsertAccessKey = typeof accessKeys.$inferInsert;
 // ─── Histórico de validações/logins via key ───────────────────────────────────
 export const keyValidations = mysqlTable("key_validations", {
   id: int("id").autoincrement().primaryKey(),
-  key: varchar("key", { length: 64 }).notNull(),
+  key: varchar("key", { length: 128 }).notNull(),
   keyId: int("key_id"), // FK -> access_keys.id (pode ser null se key inválida)
   result: mysqlEnum("result", ["success", "invalid", "expired", "banned", "paused"]).notNull(),
   ipAddress: varchar("ip_address", { length: 64 }),
@@ -103,3 +103,14 @@ export const users = mysqlTable("users", {
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+
+// ─── Tabela de prefixos de keys por usuário ───────────────────────────────────
+export const keyPrefixes = mysqlTable("key_prefixes", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(), // FK -> auth_users.id
+  prefix: varchar("prefix", { length: 32 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type KeyPrefix = typeof keyPrefixes.$inferSelect;
+export type InsertKeyPrefix = typeof keyPrefixes.$inferInsert;

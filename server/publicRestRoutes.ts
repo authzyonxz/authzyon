@@ -35,39 +35,39 @@ export function registerPublicRestRoutes(app: Express) {
    */
   app.post("/api/public/validate-key", keyValidationRateLimiter, async (req: Request, res: Response) => {
     try {
-      const keyUpper = req.body?.key?.toUpperCase().trim();
+      const keyInput = req.body?.key?.trim();
       const ip = req.ip ?? req.headers["x-forwarded-for"]?.toString();
       const ua = req.headers["user-agent"];
 
-      if (!keyUpper) {
+      if (!keyInput) {
         return res.status(400).json({ success: false, result: "invalid", message: "Key não informada" });
       }
 
-      const record = await getKeyByValue(keyUpper);
+      const record = await getKeyByValue(keyInput);
       if (!record) {
-        await logKeyValidation({ key: keyUpper, keyId: null, result: "invalid", ipAddress: ip, userAgent: ua });
+        await logKeyValidation({ key: keyInput, keyId: null, result: "invalid", ipAddress: ip, userAgent: ua });
         return res.status(404).json({ success: false, result: "invalid", message: "Key inválida" });
       }
 
       if (record.status === "banned") {
-        await logKeyValidation({ key: keyUpper, keyId: record.id, result: "banned", ipAddress: ip, userAgent: ua });
+        await logKeyValidation({ key: keyInput, keyId: record.id, result: "banned", ipAddress: ip, userAgent: ua });
         return res.status(403).json({ success: false, result: "banned", message: "Key banida" });
       }
 
       if (record.status === "paused") {
-        await logKeyValidation({ key: keyUpper, keyId: record.id, result: "paused", ipAddress: ip, userAgent: ua });
+        await logKeyValidation({ key: keyInput, keyId: record.id, result: "paused", ipAddress: ip, userAgent: ua });
         return res.status(403).json({ success: false, result: "paused", message: "Key pausada temporariamente" });
       }
 
       // Verifica expiração
       if (record.status === "active" && record.expiresAt && isKeyExpired(record.expiresAt)) {
         await updateKey(record.id, { status: "expired" });
-        await logKeyValidation({ key: keyUpper, keyId: record.id, result: "expired", ipAddress: ip, userAgent: ua });
+        await logKeyValidation({ key: keyInput, keyId: record.id, result: "expired", ipAddress: ip, userAgent: ua });
         return res.status(403).json({ success: false, result: "expired", message: "Key expirada" });
       }
 
       if (record.status === "expired") {
-        await logKeyValidation({ key: keyUpper, keyId: record.id, result: "expired", ipAddress: ip, userAgent: ua });
+        await logKeyValidation({ key: keyInput, keyId: record.id, result: "expired", ipAddress: ip, userAgent: ua });
         return res.status(403).json({ success: false, result: "expired", message: "Key expirada" });
       }
 
@@ -98,17 +98,17 @@ export function registerPublicRestRoutes(app: Express) {
         }
       }
 
-      await logKeyValidation({ key: keyUpper, keyId: record.id, result: "success", ipAddress: ip, userAgent: ua });
+      await logKeyValidation({ key: keyInput, keyId: record.id, result: "success", ipAddress: ip, userAgent: ua });
       return res.json({
         success: true,
         result: "success",
-        key: keyUpper,
+        key: keyInput,
         status: "active",
         activatedAt: activatedAt?.toISOString(),
         expiresAt: expiresAt?.toISOString(),
         durationDays: record.durationDays + (record.extraDays ?? 0),
         packageName,
-        message: `Key Validada, KEY: ${keyUpper}`,
+        message: `Key Validada, KEY: ${keyInput}`,
       });
     } catch (error) {
       console.error("Erro em /api/public/validate-key:", error);
@@ -122,15 +122,15 @@ export function registerPublicRestRoutes(app: Express) {
    */
   app.get("/api/public/check-key/:key", keyValidationRateLimiter, async (req: Request, res: Response) => {
     try {
-      const keyUpper = req.params.key?.toUpperCase().trim();
+      const keyInput = req.params.key?.trim();
       const ip = req.ip ?? req.headers["x-forwarded-for"]?.toString();
       const ua = req.headers["user-agent"];
 
-      if (!keyUpper) {
+      if (!keyInput) {
         return res.status(400).json({ success: false, result: "invalid", message: "Key não informada" });
       }
 
-      const record = await getKeyByValue(keyUpper);
+      const record = await getKeyByValue(keyInput);
       if (!record) {
         return res.status(404).json({ success: false, result: "invalid", message: "Key inválida" });
       }
@@ -173,7 +173,7 @@ export function registerPublicRestRoutes(app: Express) {
       return res.json({
         success: true,
         result: "valid",
-        key: keyUpper,
+        key: keyInput,
         status: record.status,
         activatedAt: record.activatedAt?.toISOString(),
         expiresAt: record.expiresAt?.toISOString(),

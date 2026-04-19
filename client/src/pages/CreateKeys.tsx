@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PanelLayout from "@/components/PanelLayout";
 import RequireAuth from "@/components/RequireAuth";
 import { trpc } from "@/lib/trpc";
@@ -15,9 +15,10 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import {
-  KeyRound, Copy, CheckCheck, Sparkles, Clock, Loader2, Plus, Minus, Package as PackageIcon, X
+  KeyRound, Copy, CheckCheck, Sparkles, Clock, Loader2, Plus, Minus, Package as PackageIcon, X, Tag, AlertCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Link } from "wouter";
 
 const DURATIONS = [
   { days: 1, label: "1 Dia", short: "1d" },
@@ -128,11 +129,19 @@ function CreateKeysContent() {
   const [count, setCount] = useState(1);
   const [duration, setDuration] = useState(1);
   const [packageId, setPackageId] = useState<string>("none");
+  const [prefix, setPrefix] = useState<string>("");
   const [showModal, setShowModal] = useState(false);
   const [generatedKeys, setGeneratedKeys] = useState<string[]>([]);
 
   const utils = trpc.useUtils();
   const { data: packages } = trpc.packages.list.useQuery();
+  const { data: prefixes, isLoading: loadingPrefixes } = trpc.panel.listPrefixes.useQuery();
+
+  useEffect(() => {
+    if (prefixes && prefixes.length > 0 && !prefix) {
+      setPrefix(prefixes[0].prefix);
+    }
+  }, [prefixes, prefix]);
 
   const selectedDuration = DURATIONS.find(d => d.days === duration) ?? DURATIONS[0];
   const selectedPackage = packages?.find(p => p.id.toString() === packageId);
@@ -152,10 +161,15 @@ function CreateKeysContent() {
   });
 
   const handleGenerate = () => {
+    if (!prefix) {
+      toast.error("Selecione um prefixo para gerar as keys");
+      return;
+    }
     generateMutation.mutate({
       count,
       durationDays: duration,
-      packageId: packageId === "none" ? undefined : parseInt(packageId)
+      packageId: packageId === "none" ? undefined : parseInt(packageId),
+      prefix: prefix
     });
   };
 
@@ -184,6 +198,41 @@ function CreateKeysContent() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
+            {/* Prefix Selection */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                <Tag className="w-3.5 h-3.5 text-muted-foreground" />
+                Prefixo da Key
+              </Label>
+              {loadingPrefixes ? (
+                <div className="h-10 bg-secondary/30 animate-pulse rounded-md" />
+              ) : prefixes && prefixes.length > 0 ? (
+                <Select value={prefix} onValueChange={setPrefix}>
+                  <SelectTrigger className="bg-input border-border text-foreground">
+                    <SelectValue placeholder="Selecione um prefixo" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border text-foreground">
+                    {prefixes.map(p => (
+                      <SelectItem key={p.id} value={p.prefix}>
+                        {p.prefix}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 flex items-start gap-3">
+                  <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="text-xs text-amber-500 font-medium">Nenhum prefixo cadastrado</p>
+                    <p className="text-[11px] text-amber-500/80">Você precisa criar pelo menos um prefixo no seu perfil antes de gerar keys.</p>
+                    <Link href="/profile">
+                      <a className="text-[11px] text-amber-500 font-bold underline hover:text-amber-400">Ir para Perfil</a>
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Package Selection */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-foreground flex items-center gap-1.5">
@@ -203,9 +252,6 @@ function CreateKeysContent() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-[11px] text-muted-foreground">
-                Se selecionar um pacote, a key só funcionará em projetos configurados com o token desse pacote.
-              </p>
             </div>
 
             {/* Duração */}
@@ -262,12 +308,11 @@ function CreateKeysContent() {
                   {count > 1 ? `${count} keys` : "1 key"}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground">Máximo de 100 keys por vez</p>
             </div>
 
             <Button
               onClick={handleGenerate}
-              disabled={generateMutation.isPending}
+              disabled={generateMutation.isPending || !prefix}
               className="w-full h-11 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {generateMutation.isPending ? (

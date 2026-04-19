@@ -1,27 +1,35 @@
-const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+const CHARS_UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+const CHARS_MIXED = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
 /**
- * Gera uma key alfanumérica maiúscula com comprimento entre 10 e 14 caracteres.
- * Formato: apenas letras A-Z e números 0-9, tudo maiúsculo.
+ * Gera uma key no formato: PREFIXO-Xday-XXXXxxXxxx
+ * O sufixo tem 15 caracteres com letras maiúsculas, minúsculas e números.
  */
-export function generateKey(length?: number): string {
-  const len = length ?? Math.floor(Math.random() * 5) + 10; // 10 a 14
-  let key = "";
-  for (let i = 0; i < len; i++) {
-    key += CHARS[Math.floor(Math.random() * CHARS.length)];
+export function generateKey(prefix: string, durationDays: number): string {
+  const suffixLen = 15;
+  let suffix = "";
+  for (let i = 0; i < suffixLen; i++) {
+    suffix += CHARS_MIXED[Math.floor(Math.random() * CHARS_MIXED.length)];
   }
-  return key;
+  
+  // Formato: PREFIXO-Xday-SUFFIX
+  return `${prefix.toUpperCase()}-${durationDays}day-${suffix}`;
 }
 
 /**
  * Gera múltiplas keys únicas, verificando colisões com o conjunto existente.
  */
-export function generateKeys(count: number, existingKeys: Set<string> = new Set()): string[] {
+export function generateKeys(
+  count: number, 
+  prefix: string, 
+  durationDays: number, 
+  existingKeys: Set<string> = new Set()
+): string[] {
   const keys: string[] = [];
   const attempts = count * 10;
   let i = 0;
   while (keys.length < count && i < attempts) {
-    const key = generateKey();
+    const key = generateKey(prefix, durationDays);
     if (!existingKeys.has(key) && !keys.includes(key)) {
       keys.push(key);
     }

@@ -28,6 +28,9 @@ import {
   getPanelSession,
   deletePanelSession,
   cleanExpiredSessions,
+  getUserPrefixes,
+  createPrefix,
+  deletePrefix,
 } from "./db";
 import { hashPassword, verifyPassword, generateSessionToken } from "./passwordUtils";
 import { generateKeys, calculateExpiry, isKeyExpired } from "./keyGenerator";
@@ -170,6 +173,31 @@ export const appRouter = router({
         await updateAuthUser(user.id, updates as any);
         return { success: true };
       }),
+
+    listPrefixes: panelProcedure.query(async ({ ctx }) => {
+      const user = (ctx as any).panelUser;
+      return await getUserPrefixes(user.id);
+    }),
+
+    addPrefix: panelProcedure
+      .input(z.object({ prefix: z.string().min(1).max(32).regex(/^[A-Z0-9]+$/i, "Apenas letras e números") }))
+      .mutation(async ({ input, ctx }) => {
+        const user = (ctx as any).panelUser;
+        try {
+          await createPrefix(user.id, input.prefix);
+          return { success: true };
+        } catch (error: any) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
+        }
+      }),
+
+    removePrefix: panelProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const user = (ctx as any).panelUser;
+        await deletePrefix(user.id, input.id);
+        return { success: true };
+      }),
   }),
 
   // ─── Dashboard ─────────────────────────────────────────────────────────────
@@ -216,9 +244,22 @@ export const appRouter = router({
         count: z.number().min(1).max(100),
         durationDays: z.number().refine(v => [1, 7, 30].includes(v), "Duração inválida"),
         packageId: z.number().optional(),
+        prefix: z.string().min(1).max(32),
       }))
       .mutation(async ({ input, ctx }) => {
         const user = (ctx as any).panelUser;
+
+        // Verifica se o prefixo pertence ao usuário (ou se é admin)
+        if (user.role !== "admin") {
+          const userPrefixes = await getUserPrefixes(user.id);
+          const hasPrefix = userPrefixes.some(p => p.prefix === input.prefix.toUpperCase());
+          if (!hasPrefix) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "Prefixo inválido ou não pertence a você.",
+            });
+          }
+        }
 
         // Verifica limite de keys
         if (user.role !== "admin") {
@@ -234,7 +275,7 @@ export const appRouter = router({
         // Busca keys existentes para evitar colisão
         const existing = await getAllKeys();
         const existingSet = new Set(existing.map(k => k.key));
-        const newKeys = generateKeys(input.count, existingSet);
+        const newKeys = generateKeys(input.count, input.prefix, input.durationDays, existingSet);
 
         for (const key of newKeys) {
           await createAccessKey({

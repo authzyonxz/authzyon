@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { UserCircle, Camera, Save, Loader2, KeyRound, Shield, User } from "lucide-react";
+import { UserCircle, Camera, Save, Loader2, KeyRound, Shield, User, Plus, Trash2, Tag } from "lucide-react";
 import { usePanelAuth } from "@/hooks/usePanelAuth";
 
 function ProfileContent() {
@@ -17,8 +17,11 @@ function ProfileContent() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarBase64, setAvatarBase64] = useState<string | null>(null);
   const [avatarMime, setAvatarMime] = useState<string | null>(null);
+  const [newPrefix, setNewPrefix] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const utils = trpc.useUtils();
+
+  const { data: prefixes, isLoading: loadingPrefixes } = trpc.panel.listPrefixes.useQuery();
 
   const updateMutation = trpc.panel.updateProfile.useMutation({
     onSuccess: () => {
@@ -31,6 +34,23 @@ function ProfileContent() {
     onError: (err) => toast.error(err.message || "Erro ao atualizar perfil"),
   });
 
+  const addPrefixMutation = trpc.panel.addPrefix.useMutation({
+    onSuccess: () => {
+      toast.success("Prefixo adicionado!");
+      setNewPrefix("");
+      utils.panel.listPrefixes.invalidate();
+    },
+    onError: (err) => toast.error(err.message || "Erro ao adicionar prefixo"),
+  });
+
+  const removePrefixMutation = trpc.panel.removePrefix.useMutation({
+    onSuccess: () => {
+      toast.success("Prefixo removido!");
+      utils.panel.listPrefixes.invalidate();
+    },
+    onError: (err) => toast.error(err.message || "Erro ao remover prefixo"),
+  });
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -41,7 +61,6 @@ function ProfileContent() {
     const reader = new FileReader();
     reader.onload = (ev) => {
       const result = ev.target?.result as string;
-      // result = "data:image/jpeg;base64,..."
       const [header, b64] = result.split(",");
       const mime = header.match(/:(.*?);/)?.[1] ?? "image/jpeg";
       setAvatarPreview(result);
@@ -65,13 +84,19 @@ function ProfileContent() {
     updateMutation.mutate(updates);
   };
 
+  const handleAddPrefix = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPrefix.trim()) return;
+    addPrefixMutation.mutate({ prefix: newPrefix.trim() });
+  };
+
   const currentAvatar = avatarPreview ?? user?.avatarUrl ?? undefined;
 
   return (
-    <div className="space-y-6 max-w-lg animate-fade-in-up">
+    <div className="space-y-6 max-w-lg animate-fade-in-up pb-10">
       <div>
         <h2 className="text-2xl font-bold text-foreground">Meu Perfil</h2>
-        <p className="text-muted-foreground text-sm mt-0.5">Edite suas informações pessoais</p>
+        <p className="text-muted-foreground text-sm mt-0.5">Edite suas informações pessoais e gerencie seus prefixos</p>
       </div>
 
       {/* Avatar */}
@@ -172,6 +197,62 @@ function ProfileContent() {
               <><Save className="w-4 h-4 mr-2" /> Salvar Alterações</>
             )}
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* Prefixos */}
+      <Card className="bg-card border-border">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <Tag className="w-4 h-4 text-primary" />
+            Meus Prefixos de Key
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <form onSubmit={handleAddPrefix} className="flex gap-2">
+            <Input
+              placeholder="Ex: FFH4X"
+              value={newPrefix}
+              onChange={e => setNewPrefix(e.target.value.toUpperCase())}
+              maxLength={32}
+              className="bg-input border-border text-foreground"
+              disabled={prefixes && prefixes.length >= 3}
+            />
+            <Button 
+              type="submit" 
+              size="icon" 
+              disabled={addPrefixMutation.isPending || !newPrefix.trim() || (prefixes && prefixes.length >= 3)}
+              className="shrink-0"
+            >
+              {addPrefixMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+            </Button>
+          </form>
+
+          <div className="space-y-2">
+            {loadingPrefixes ? (
+              <div className="flex justify-center py-4"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+            ) : prefixes && prefixes.length > 0 ? (
+              prefixes.map(p => (
+                <div key={p.id} className="flex items-center justify-between p-2.5 rounded-lg bg-secondary/30 border border-border">
+                  <span className="font-mono font-bold text-sm text-foreground">{p.prefix}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => removePrefixMutation.mutate({ id: p.id })}
+                    disabled={removePrefixMutation.isPending}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))
+            ) : (
+              <p className="text-xs text-center text-muted-foreground py-4">Nenhum prefixo cadastrado. Adicione um para gerar keys.</p>
+            )}
+            {prefixes && prefixes.length >= 3 && (
+              <p className="text-[10px] text-amber-500 text-center">Limite de 3 prefixos atingido.</p>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

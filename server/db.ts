@@ -1,6 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { accessKeys, authUsers, InsertUser, keyValidations, panelSessions, users, packages } from "../drizzle/schema";
+import { accessKeys, authUsers, InsertUser, keyValidations, panelSessions, users, packages, keyPrefixes } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -294,4 +294,34 @@ export async function getUserByOpenId(openId: string) {
   if (!db) return undefined;
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
   return result.length > 0 ? result[0] : undefined;
+}
+
+// ─── Key Prefixes ─────────────────────────────────────────────────────────────
+
+export async function getUserPrefixes(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(keyPrefixes).where(eq(keyPrefixes.userId, userId)).orderBy(desc(keyPrefixes.createdAt));
+}
+
+export async function createPrefix(userId: number, prefix: string) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  
+  // Verifica limite de 3 prefixos
+  const existing = await getUserPrefixes(userId);
+  if (existing.length >= 3) {
+    throw new Error("Limite de 3 prefixos atingido");
+  }
+
+  await db.insert(keyPrefixes).values({
+    userId,
+    prefix: prefix.trim().toUpperCase(),
+  });
+}
+
+export async function deletePrefix(userId: number, prefixId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(keyPrefixes).where(and(eq(keyPrefixes.id, prefixId), eq(keyPrefixes.userId, userId)));
 }
