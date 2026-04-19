@@ -3,7 +3,8 @@ import { user2FA, InsertUser2FA } from "../drizzle/schema_extensions";
 import { eq } from "drizzle-orm";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
-const { authenticator } = require("otplib");
+const otplib = require("otplib");
+const authenticator = otplib.authenticator || otplib;
 import QRCode from "qrcode";
 import crypto from "crypto";
 
